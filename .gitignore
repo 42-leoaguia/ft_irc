@@ -7,9 +7,9 @@ obj/
 *.d
 
 # Editors
-.vscode
+.vscode/
 .DS_Store
 *.swp
 
 # Reference material
-bircd.tar.gz
+*.tar.gz
