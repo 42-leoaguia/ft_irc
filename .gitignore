@@ -1,0 +1,15 @@
+# Binary
+ircserv
+
+# Objects and Dependencies
+obj/
+*.o
+*.d
+
+# Editors
+.vscode/
+.DS_Store
+*.swp
+
+# Reference material
+*.tar.gz
