@@ -184,7 +184,7 @@ kill the server.
 ft_irc/
 ├── Makefile
 ├── README.md
-├── CONTRIBUTING.md              internal conventions and interface contracts
+├── RULES.md              internal conventions
 ├── inc/
 │   ├── Server.hpp               event loop, sockets, dispatch table
 │   ├── Client.hpp               per-client state and I/O buffers
@@ -209,13 +209,10 @@ ft_irc/
 
 | Component | Maintainer |
 |---|---|
-| `Server`, `Message`, `main.cpp`, `Makefile` | &lt;login1&gt; |
-| `Client`, `PASS` `NICK` `USER` `PRIVMSG` `NOTICE` `QUIT` | &lt;login2&gt; |
-| `Channel`, `JOIN` `PART` `TOPIC` `MODE` `KICK` `INVITE` | &lt;login3&gt; |
+| `Server`, `Message`, `main.cpp`, `Makefile` | larocquel |
+| `Client`, `PASS` `NICK` `USER` `PRIVMSG` `NOTICE` `QUIT` | davmendo |
+| `Channel`, `JOIN` `PART` `TOPIC` `MODE` `KICK` `INVITE` | liaFonseca |
 | `Replies.hpp` | shared |
-
-Each component has one maintainer, but every part of the code was reviewed by at least
-one other member before being merged.
 
 ---
 
