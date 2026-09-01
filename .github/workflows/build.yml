@@ -1,0 +1,58 @@
+# .github/workflows/build.yml
+#
+# Compila o ircserv numa maquina limpa a cada Pull Request.
+# Objetivo: garantir que o projeto compila na maquina do avaliador,
+# nao so nas nossas.
+
+# "name" e o que aparece na aba Actions e no PR.
+name: build
+
+# ---------------------------------------------------------------------------
+# QUANDO rodar.
+# pull_request: dispara ao abrir um PR e a cada novo commit nele.
+# Nao usamos "push" porque durante o desenvolvimento a branch tem codigo
+# quebrado o tempo todo — o que importa e o estado no momento do merge.
+# ---------------------------------------------------------------------------
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  # "make" e o ID do job. E este nome que voce vai marcar como
+  # required status check na protecao da branch main.
+  make:
+    # A maquina virtual. ubuntu-latest ja vem com g++ e make instalados,
+    # entao nao precisamos instalar nada.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: baixar o codigo do PR para dentro da maquina virtual.
+      # "uses" chama uma acao pronta feita por outra pessoa; actions/checkout
+      # e a oficial do GitHub. Sem ela a maquina esta vazia.
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      # Passo 2: o build. "run" executa um comando no shell.
+      # Se o make retornar codigo diferente de zero (erro de compilacao ou
+      # qualquer warning, ja que usamos -Werror), o step falha e o PR trava.
+      - name: make
+        run: make
+
+      # Passo 3: o make pode "passar" sem gerar o binario se o Makefile
+      # estiver errado. test -f falha se o arquivo nao existir.
+      - name: O binario ircserv foi gerado
+        run: test -f ircserv
+
+      # Passo 4: o subject exige as regras clean, fclean e re.
+      # Aqui verificamos que fclean realmente apaga o binario...
+      - name: make fclean apaga o binario
+        run: |
+          make fclean
+          test ! -f ircserv
+
+      # ...e que re reconstroi do zero.
+      # O "|" acima e abaixo permite escrever varias linhas de shell num step.
+      - name: make re reconstroi
+        run: |
+          make re
+          test -f ircserv
