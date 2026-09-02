@@ -1,4 +1,16 @@
-#include "../inc/Server.hpp"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
+/*   Updated: 2026/09/02 16:33:01 by liafonse         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../inc/Server.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -10,8 +22,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-Server::Server(int port)
-	: _serverFd(-1), _port(port)
+Server::Server(int port, const std::string& password)
+	: _serverFd(-1), _port(port), _password(password)
 {
 	setupSocket();
 }
