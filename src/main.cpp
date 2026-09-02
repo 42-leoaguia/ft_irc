@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:52:15 by leoaguia          #+#    #+#             */
-/*   Updated: 2026/09/02 03:21:16 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/02 03:29:48 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,8 @@ static void	validatePass(const std::string& pass)
 }
 
 // Valida e converte a porta:
-// - 1 a 5 dígitos
 // - Somente dígitos
+// - 1 a 5 dígitos
 // - Valor entre 1024 e 65535 (0~1023 = well-known ports e 65535 = limite 16 bits)
 static int	validatePort(const std::string& port)
 {
@@ -37,16 +37,17 @@ static int	validatePort(const std::string& port)
 	if (port.empty())
 		throw std::invalid_argument("port must not be empty");
 
-	// 2. 1 a 5 dígitos
-	if (port.size() > 5)
-		throw std::invalid_argument("port is too long: " + port);
-
-	// 3. Somente dígitos
+	// 2. Somente dígitos
 	for (std::string::size_type i = 0; i < port.size(); ++i)
 	{
 		if (port[i] < '0' || port[i] > '9')
 			throw std::invalid_argument("port must contain digits only: " + port);
 	}
+
+	// 3. 1 a 5 dígitos
+	if (port.size() > 5)
+		throw std::invalid_argument("port is too long: " + port);
+
 
 	// 4. Conversão (string -> int)
 	value = 0;
