@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/02 16:31:17 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/09/02 16:35:53 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #define SERVER_HPP
 
 #include <poll.h>
+#include <string>
 
 class Server
 {
@@ -25,7 +26,7 @@ private:
 	void setupSocket();
 
 public:
-	Server(int port);
+	Server(int port, const std::string& _password);
 	~Server();
 
 	void run();
