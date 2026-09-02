@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:52:15 by leoaguia          #+#    #+#             */
-/*   Updated: 2026/09/02 03:29:48 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/02 03:38:55 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,7 @@ int	main(int argc, char **argv)
 		validatePass(pass);
 
 		// 2. Constrói o Server: socket, bind, listen. Lança se algum falhar.
-		// Server	server(port, password);
+		// Server	server(port, pass);
 
 		// 3. Entra no loop de poll(). Só retorna no SIGINT.
 		// server.run()
