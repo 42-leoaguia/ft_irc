@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
+/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:52:15 by leoaguia          #+#    #+#             */
-/*   Updated: 2026/09/02 16:30:41 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/09/03 00:43:26 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,9 +88,6 @@ int	main(int argc, char **argv)
 
 		// 4. Entra no loop de poll(). Só retorna no SIGINT.
 		server.run();
-
-		std::cout	<< "arguments ok: port " << port
-					<< ", pass size " << pass.size() << std::endl;
 	}
 	catch (const std::exception& e)
 	{
