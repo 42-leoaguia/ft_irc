@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/03 01:07:09 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/03 01:11:17 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,11 @@ private:
 
 	void setupSocket();
 
+	// Um Server só existe com porta e senha
+	// Copiar um significaria dois donos do mesmo fd. close() duplo no destrutor.
+	Server();
 	Server(const Server& other);
 	Server&	operator=(const Server& other);
-	// Assim temos a OCF completa e ainda prevenimos
-	// Server a(6667, "senha");
-	// Server b = a; -> Risco de close() duplo no destructor
 
 public:
 	Server(int port, const std::string& password);
