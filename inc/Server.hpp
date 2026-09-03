@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
+/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/02 16:35:53 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/09/03 01:00:42 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,14 @@ private:
 
 	void setupSocket();
 
+	Server(const Server& other);
+	Server&	operator=(const Server& other);
+	// Assim temos a OCF completa e ainda previnimos
+	//Server a(6667, "senha");
+	//Server b = a;
+
 public:
-	Server(int port, const std::string& _password);
+	Server(int port, const std::string& password);
 	~Server();
 
 	void run();

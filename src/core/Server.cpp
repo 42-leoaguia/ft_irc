@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
+/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/02 16:33:01 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/09/03 00:49:40 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../inc/Server.hpp"
+// -Iinc/ on Makefile, so no need to "../../inc/Server.hpp"
+#include "Server.hpp"
 
 #include <iostream>
 #include <stdexcept>
