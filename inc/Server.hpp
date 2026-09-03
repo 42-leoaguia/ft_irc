@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/03 01:00:42 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/03 01:07:09 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,9 +27,9 @@ private:
 
 	Server(const Server& other);
 	Server&	operator=(const Server& other);
-	// Assim temos a OCF completa e ainda previnimos
-	//Server a(6667, "senha");
-	//Server b = a;
+	// Assim temos a OCF completa e ainda prevenimos
+	// Server a(6667, "senha");
+	// Server b = a; -> Risco de close() duplo no destructor
 
 public:
 	Server(int port, const std::string& password);
