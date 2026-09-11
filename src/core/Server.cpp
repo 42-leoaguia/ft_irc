@@ -6,11 +6,10 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/03 00:49:40 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/11 23:54:04 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// -Iinc/ on Makefile, so no need to "../../inc/Server.hpp"
 #include "Server.hpp"
 
 #include <iostream>
@@ -23,12 +22,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+/* Constructor */
 Server::Server(int port, const std::string& password)
 	: _serverFd(-1), _port(port), _password(password)
 {
 	setupSocket();
 }
 
+/* Destructor */
 Server::~Server()
 {
 	if (_serverFd != -1)
@@ -37,12 +38,12 @@ Server::~Server()
 
 void Server::setupSocket()
 {
-	// Create the server socket and make the listening socket non-blocking
-	_serverFd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	// 1. Create the server socket
+	_serverFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_serverFd == -1)
 		throw std::runtime_error("socket() failed");
 
-	// Allow the port to be reused immediately after closing the server
+	// 2. Allow the port to be reused immediately after closing the server
 	int opt = 1;
 	if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR,
 		&opt, sizeof(opt)) == -1)
@@ -52,32 +53,31 @@ void Server::setupSocket()
 		throw std::runtime_error("setsockopt() failed");
 	}
 
-	// Make the listening socket non-blocking
-	// if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) == -1)
-	// {
-	// 	close(_serverFd);
-	// 	_serverFd = -1;
-	// 	throw std::runtime_error("fcntl() failed");
-	// }
+	// 3. Make the listening socket non-blocking
+	if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		close(_serverFd);
+		_serverFd = -1;
+		throw std::runtime_error("fcntl() failed");
+	}
 
-	// Set the address
-	sockaddr_in address;
+	// 4. Set the address
+	sockaddr_in	address;
 	std::memset(&address, 0, sizeof(address));
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(_port);
 
-	// Bind the socket to the port
-	if (bind(_serverFd, reinterpret_cast<sockaddr *>(&address),
-		sizeof(address)) == -1)
+	// 5. Bind the socket to the port
+	if (bind(_serverFd, reinterpret_cast<sockaddr *>(&address), sizeof(address)) == -1)
 	{
 		close(_serverFd);
 		_serverFd = -1;
 		throw std::runtime_error("bind() failed");
 	}
 
-	// Start listening for incoming connections
+	// 6. Start listening for incoming connections
 	if (listen(_serverFd, SOMAXCONN) == -1)
 	{
 		close(_serverFd);
@@ -85,45 +85,146 @@ void Server::setupSocket()
 		throw std::runtime_error("listen() failed");
 	}
 
-	std::cout << "Server listening on port "
-			  << _port << std::endl;
-}
-
-void Server::run()
-{
-	struct pollfd pfd;
+	// 7. Register _pfds[0] as the listening socket
+	struct pollfd	pfd;
 
 	pfd.fd = _serverFd;
-	pfd.events = POLLIN;
+	pfd.events = POLLIN;	// Awares us when there is anything to read
 	pfd.revents = 0;
+	_pfds.push_back(pfd);
 
+	std::cout << "Server listening on port " << _port << std::endl;
+}
+
+/*
+Events Loop: Server core
+1 turn
+- Ask if anyone has news
+- Deal with any news
+- Back to sleep mode
+*/
+void Server::run()
+{
 	while (true)
 	{
-		int result = poll(&pfd, 1, -1);
+		// &_pfds[0] funciona porque std::vector garante memória contigua.
+		// Dúvida: O que é memória contigua?
+		// Entendi que _pfds é um vetor C++ de pollfd
+		// Mas o que é uma API de C?
+		int	ready = poll(&_pfds[0], _pfds.size(), -1);
 
-		if (result == -1)
-			throw std::runtime_error("poll() failed");
+		// TODO issue #7: O tratamento correto do -1 depende do handler de SIGINT
+		// Por enquanto voltamos ao início
+		if (ready == -1)
+			continue;
 
-		if (pfd.revents & POLLIN)
+		// erase() encurta o vetor fazendo i++ pular um fd
+		std::vector<int>	toRemove;
+
+		size_t	count = _pfds.size();
+
+		for (size_t i = 0; i < count; ++i)
 		{
-			sockaddr_in clientAddress;
-			socklen_t clientSize = sizeof(clientAddress);
+			short	revents = _pfds[i].revents;
+			int		fd = _pfds[i].fd;
 
-			int clientFd = accept(
-				_serverFd,
-				reinterpret_cast<sockaddr *>(&clientAddress),
-				&clientSize
-			);
+			if (revents == 0)
+				continue;
 
-			if (clientFd == -1)
-				throw std::runtime_error("accept() failed");
+			if ((revents & POLLHUP) || (revents & POLLERR))
+			{
+				toRemove.push_back(fd);
+				continue;
+			}
 
-			std::cout << "Client connected: "
-					  << clientFd << std::endl;
+			if (i == 0)
+			{
+				if (revents && POLLIN)
+					acceptClient();
+				continue;
+			}
 
-			// Temporary for this issue.
-			// Later, the client FD will be stored and added to poll().
-			close(clientFd);
+			if (revents & POLLIN)
+				readFrom(fd);
+			if (revents & POLLOUT)
+				writeTo(fd);
+		}
+
+		// Laco terminado, seguro encurtar vetor
+		for (size_t i = 0; i < toRemove.size(); ++i)
+			disconnect(toRemove[i]);
+	}
+}
+
+/*
+acceptClient(): Removes the first connection from the queue and watchs it.
+accept(): Creates a new socket with an exclusive client fd.
+*/
+void	Server::acceptClient()
+{
+	sockaddr_in		clientAddress;
+	socklen_t		clientSize = sizeof(clientAddress);
+	int				clientFd;
+	struct pollfd	pfd;
+
+	clientFd = accept(_serverFd, reinterpret_cast<sockaddr *>(&clientAddress), &clientSize);
+
+	// Um accept falho nao deve derrubar o server.
+	// Um cliente que desiste da comunicacao e ignorado
+	if (clientFd == -1)
+		return ;
+
+	// O fd devolvido por accept nao herda o modo nao bloqueante do socket de escuta
+	// Logo, cada cliente precisa do seu proprio fcntl
+	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		close(clientFd);
+		return ;
+	}
+
+	pfd.fd = clientFd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	_pfds.push_back(pfd);
+
+	std::cout << "Client connected: " << clientFd << std::endl;
+}
+
+/*
+removePfd(): Removes a fd from the vector that poll() is watching
+*/
+void	Server::removePfd(int fd)
+{
+	for (size_t i = 0; i < _pfds.size(); ++i)
+	{
+		if (_pfds[i].fd == fd)
+		{
+			_pfds.erase(_pfds.begin() + i);
+			return ;
 		}
 	}
+}
+
+void	Server::readFrom(int fd)
+{
+	// TODO issue #5: recv -> appendToInBuffer -> while(extractLine)
+	// (void) para evitar warning
+	(void)fd;
+}
+
+void	Server::writeTo(int fd)
+{
+	// TODO issue #6: send do buffer de saida, limpar POLLOUT
+	// (void) para evitar warning
+	(void)fd;
+}
+
+/*
+TODO issue #7: avisar os canais, apagar o objeto Client, mensagem de QUIT.
+*/
+void	Server::disconnect(int fd)
+{
+	removePfd(fd);
+	close(fd);
+	std::cout << "Client disconnected: " << fd << std::endl;
 }

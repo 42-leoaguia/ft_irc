@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/11 19:22:27 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/11 19:29:44 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,11 @@
 class Server
 {
 	private:
-		// Regra: _pfds[0] » SEMPRE socket de escuta. O resto são clientes
+		// Regra: _pfds[0] é SEMPRE socket de escuta. O resto são clientes
 		std::vector<struct pollfd>	_pfds;
-		int			_serverFd;
-		int			_port;
-		std::string	_password;
+		int							_serverFd;
+		int							_port;
+		std::string					_password;
 
 
 		// Completei a OCF para evitar uma cópia do server
