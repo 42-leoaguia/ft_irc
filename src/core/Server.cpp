@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/11 23:54:04 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/12 21:29:03 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,8 +45,7 @@ void Server::setupSocket()
 
 	// 2. Allow the port to be reused immediately after closing the server
 	int opt = 1;
-	if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR,
-		&opt, sizeof(opt)) == -1)
+	if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
 	{
 		close(_serverFd);
 		_serverFd = -1;

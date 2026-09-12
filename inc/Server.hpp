@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/11 19:29:44 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/12 21:28:02 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class Server
 		int							_serverFd;
 		int							_port;
 		std::string					_password;
+		std::vector<int>			_toRemove;
 
 
 		// Completei a OCF para evitar uma cópia do server
@@ -32,6 +33,7 @@ class Server
 		Server(const Server& other);
 		Server&	operator=(const Server& other);
 
+		// Método do socket
 		void setupSocket();
 
 		// 4 métodos chamados pelo loop()
