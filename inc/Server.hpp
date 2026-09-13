@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/12 21:28:02 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/13 01:25:39 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 class Server
 {
 	private:
-		// Regra: _pfds[0] é SEMPRE socket de escuta. O resto são clientes
+		// Regra: _pfds[0] = socket de escuta. O resto são clientes
 		std::vector<struct pollfd>	_pfds;
 		int							_serverFd;
 		int							_port;
@@ -38,7 +38,7 @@ class Server
 
 		// 4 métodos chamados pelo loop()
 		void	acceptClient();
-		void	readFrom(int fd);	// stub
+		void	readFrom(int fd);
 		void	writeTo(int fd);	// stub
 		void	disconnect(int fd);	// stub
 
