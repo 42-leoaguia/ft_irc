@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:52:15 by leoaguia          #+#    #+#             */
-/*   Updated: 2026/09/02 03:43:40 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/03 00:49:37 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 #include <string>     // std::string
 #include <stdexcept>  // std::invalid_argument, std::exception
 
-// #include "Server.hpp"   // TODO: descomentar quando a issue #3 entrar na main
+#include "Server.hpp"
 
 // Valida a senha: Não pode estar vazia
 static void	validatePass(const std::string& pass)
@@ -84,14 +84,10 @@ int	main(int argc, char **argv)
 		validatePass(pass);
 
 		// 3. Constrói o Server: socket, bind, listen. Lança se algum falhar.
-		// Server	server(port, pass);
+		Server	server(port, pass);
 
 		// 4. Entra no loop de poll(). Só retorna no SIGINT.
-		// server.run()
-
-		// TODO: remover quando o Server existir (issue #3)
-		std::cout	<< "arguments ok: port " << port
-					<< ", pass size " << pass.size() << std::endl;
+		server.run();
 	}
 	catch (const std::exception& e)
 	{
