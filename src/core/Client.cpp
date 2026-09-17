@@ -82,5 +82,9 @@ bool	Client::inputOverflow() const
 		pending = _in.size();
 	else
 		pending = _in.size() - last - 1;
+	// A trailing '\r' may be the first half of a "\r\n" still in transit: it
+	// is not payload, so a 510-byte line waiting for its '\n' is not overflow.
+	if (pending > 0 && _in[_in.size() - 1] == '\r')
+		--pending;
 	return (pending > MAX_LINE - 2);
 }
