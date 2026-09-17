@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/13 01:25:39 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/17 12:55:56 by davmendo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,11 @@
 #define SERVER_HPP
 
 #include <poll.h>
+#include <map>		// std::map
 #include <string>	// std::string
 #include <vector>	// std::vector
+
+class Client;
 
 class Server
 {
@@ -27,6 +30,8 @@ class Server
 		std::string					_password;
 		std::vector<int>			_toRemove;
 
+		// Liga cada fd ao seu Client. O Server é o dono desses objetos
+		std::map<int, Client*>		_clients;
 
 		// Completei a OCF para evitar uma cópia do server
 		Server();
