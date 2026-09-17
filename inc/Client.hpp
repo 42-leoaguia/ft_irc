@@ -28,6 +28,10 @@ public:
 
 	int					getFd() const;
 	const std::string	&getHost() const;
+	const std::string	&getNickname() const;   // used by Channel; set by NICK (#12)
+
+	// TODO issue #6: becomes queue() (RULES.md 4.2); only Channel calls it for now
+	void	sendMessage(const std::string &msg);
 
 	// --- input buffer (issue #5)
 	void	appendToInBuffer(const char *data, size_t len);
@@ -40,6 +44,7 @@ private:
 
 	int			_fd;
 	std::string	_host;
+	std::string	_nickname;
 	std::string	_in;                       // bytes received, not yet framed into lines
 };
 

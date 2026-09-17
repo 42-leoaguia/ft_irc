@@ -36,6 +36,17 @@ const std::string	&Client::getHost() const
 	return (_host);
 }
 
+const std::string	&Client::getNickname() const
+{
+	return (_nickname);
+}
+
+// Placeholder until the output buffer exists (issue #6).
+void	Client::sendMessage(const std::string &msg)
+{
+	(void)msg;
+}
+
 // --- input buffer (issue #5)
 
 void	Client::appendToInBuffer(const char *data, size_t len)
