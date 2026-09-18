@@ -3,21 +3,24 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/13 01:37:41 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/17 12:56:02 by davmendo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include "Client.hpp"
 
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
+#include <new>			// std::bad_alloc
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>	// inet_ntoa
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -29,9 +32,15 @@ Server::Server(int port, const std::string& password)
 	setupSocket();
 }
 
-/* Destructor */
+/* Destructor: fecha e apaga os clientes que ainda estiverem conectados */
 Server::~Server()
 {
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		close(it->first);
+		delete it->second;
+	}
+	_clients.clear();
 	if (_serverFd != -1)
 		close(_serverFd);
 }
@@ -162,6 +171,7 @@ void	Server::acceptClient()
 	socklen_t		clientSize = sizeof(clientAddress);
 	int				clientFd;
 	struct pollfd	pfd;
+	Client			*client = NULL;
 
 	clientFd = accept(_serverFd, reinterpret_cast<sockaddr *>(&clientAddress), &clientSize);
 
@@ -181,7 +191,24 @@ void	Server::acceptClient()
 	pfd.fd = clientFd;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
-	_pfds.push_back(pfd);
+
+	// O Server e o dono do Client: criado aqui, apagado em disconnect().
+	// Sem memoria recusamos so este cliente, desfazendo o que ja foi feito
+	try
+	{
+		std::string	host(inet_ntoa(clientAddress.sin_addr));
+
+		client = new Client(clientFd, host);
+		_clients[clientFd] = client;
+		_pfds.push_back(pfd);
+	}
+	catch (const std::bad_alloc&)
+	{
+		_clients.erase(clientFd);
+		delete client;
+		close(clientFd);
+		return ;
+	}
 
 	std::cout << "Client connected: " << clientFd << std::endl;
 }
@@ -203,30 +230,55 @@ void	Server::removePfd(int fd)
 
 /*
 readFrom(): Reads whatever arrived on a client fd.
+TCP entrega bytes, nao comandos: um recv() pode trazer meio comando, um
+comando inteiro ou varios. Os bytes vao para o buffer do cliente e so saem
+de la como linhas completas (Client::extractLine).
 */
 void	Server::readFrom(int fd)
 {
-	char	buffer[512];
-	ssize_t	bytes;
+	char								buffer[512];
+	ssize_t								bytes;
+	std::string							line;
+	std::map<int, Client*>::iterator	it;
+	Client								*client;
+
+	// Todo fd de cliente em _pfds tem um Client (acceptClient/disconnect)
+	it = _clients.find(fd);
+	if (it == _clients.end())
+		return ;
+	client = it->second;
 
 	bytes = recv(fd, buffer, sizeof(buffer), 0);
 
-	// 0 = fim de arquivo
+	// 0 = o outro lado fechou a conexao
 	if (bytes == 0)
 	{
 		_toRemove.push_back(fd);
 		return ;
 	}
 
-	// -1 = nada disponivel agora
+	// -1 = nada disponivel agora: espera o proximo poll(), sem olhar errno
 	if (bytes == -1)
 	{
 		return ;
 	}
 
-	// TODO issue #5: os bytes vão para client.appendToInBuffer(buffer, bytes)
-	// e depois um while(extractLine). Por ora só mostramos que chegaram
 	std::cout << "Received " << bytes << " bytes from fd " << fd << std::endl;
+
+	// Guarda tudo o que chegou, mesmo que seja so um pedaco de comando
+	client->appendToInBuffer(buffer, bytes);
+
+	// Um recv() pode trazer varios comandos: processa todas as linhas completas.
+	// O que sobrar (comando pela metade) fica no buffer esperando o proximo recv()
+	while (client->extractLine(line))
+	{
+		// Nenhum comando apaga o Client aqui dentro: a remocao vai para _toRemove
+		std::cout << "Line from fd " << fd << ": [" << line << "]" << std::endl;
+	}
+	// Mais de 510 bytes sem "\n" nunca vira uma linha valida (RFC 2812):
+	// derruba o cliente para o buffer nao crescer sem limite
+	if (client->inputOverflow())
+		_toRemove.push_back(fd);
 }
 
 void	Server::writeTo(int fd)
@@ -237,10 +289,19 @@ void	Server::writeTo(int fd)
 }
 
 /*
-TODO issue #7: avisar os canais, apagar o objeto Client, mensagem de QUIT.
+disconnect(): Fecha a conexao e apaga o Client (o Server e o dono).
+TODO issue #7: avisar os canais e mandar a mensagem de QUIT.
 */
 void	Server::disconnect(int fd)
 {
+	std::map<int, Client*>::iterator	it;
+
+	// O mesmo fd pode ter sido agendado duas vezes na mesma rodada
+	it = _clients.find(fd);
+	if (it == _clients.end())
+		return ;
+	delete it->second;
+	_clients.erase(it);
 	removePfd(fd);
 	close(fd);
 	std::cout << "Client disconnected: " << fd << std::endl;
