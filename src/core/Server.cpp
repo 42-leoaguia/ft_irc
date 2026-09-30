@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/30 21:53:39 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/30 21:56:46 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -323,7 +323,7 @@ void	Server::writeTo(int fd)
 	if (!client->hasPendingOutput())
 		return ;
 
-	sent = send(fd, client->getOutBuffer.c_str(), client->getOutBuffer.size(), MSG_NOSIGNAL);
+	sent = send(fd, client->getOutBuffer().c_str(), client->getOutBuffer().size(), MSG_NOSIGNAL);
 
 	// -1: Não deu para escrever agora. Bytes ficam na fila e tentamos na próxima volta.
 	if (sent == -1)
