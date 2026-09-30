@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:18:23 by davmendo          #+#    #+#             */
-/*   Updated: 2026/09/17 14:49:57 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/09/30 19:53:02 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,12 +45,7 @@ const std::string	&Client::getNickname() const
 	return (_nickname);
 }
 
-// provisorio: ainda nao existe buffer de saida (issue #6), então a mensagem é
-// ignorada. Quando a #6 criar o queue(), o Channel passa a chamar o queue()
-void	Client::sendMessage(const std::string &msg)
-{
-	(void)msg;
-}
+
 
 // o TCP entrega bytes, nao comandos. Um recv() pode trazer
 // meio comando, um comando inteiro ou vários de uma vez. o Server guarda tudo

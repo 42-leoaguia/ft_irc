@@ -105,7 +105,7 @@ void Channel::broadcast(const std::string& msg, Client* except)
 		if (*it == except)
 			continue;
 
-		(*it)->sendMessage(msg);
+		(*it)->queue(msg);
 	}
 }
 

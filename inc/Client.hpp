@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 19:23:40 by davmendo          #+#    #+#             */
-/*   Updated: 2026/09/17 14:49:15 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/09/30 20:10:17 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 
 /*
 o server cria um client em acceptClient() para cada conexao aceita e o apaga
-em disconnect(). 
+em disconnect().
 
 o client só guarda dados: quem chama recv(), send() e close() é sempre o Server
 o que ele guarda hoje:
@@ -42,11 +42,17 @@ public:
 	// getters
 	int					getFd() const;
 	const std::string	&getHost() const;
-	const std::string	&getNickname() const;   // usado pelo Channel
+	const std::string	&getNickname() const;	// usado pelo Channel
+	const	std::string	&getOutBuffer() const;	// send() lê daqui
 
+	// Acrescenta msg + "\r\n" na fila de saída
+	void	queue(const std::string &msg);
 
-	// TODO issue #6: vira queue(). por enquanto não envia nada
-	void	sendMessage(const std::string &msg);
+	// Procura bytes pendentes. É rodado ao fim de cada volta
+	bool	hasPendingOutput() const;
+
+	// Apaga n bytes que o send aceitou
+	void	consumeOutBuffer(size_t	n);
 
 	// guarda os len bytes que o recv() devolveu, mesmo que sejam meio comando
 	void	appendToInBuffer(const char *data, size_t len);
@@ -67,6 +73,7 @@ private:
 	std::string	_host;		// IP do cliente, ex.: "127.0.0.1"
 	std::string	_nickname;	// preenchido pelo NICK (issue #12)
 	std::string	_in;		// bytes que ainda não formaram uma linha completa
+	std::string	_out;		// bytes prontos, esperando o send()
 };
 
 #endif
