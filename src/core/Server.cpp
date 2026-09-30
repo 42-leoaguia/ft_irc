@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/23 14:56:09 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/09/30 21:53:39 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -304,11 +304,33 @@ void	Server::readFrom(int fd)
 		_toRemove.push_back(fd);
 }
 
+/*
+writeTo(): Envia o que estiver na fila daquele cliente.
+Só é chamado quando o poll() reportou POOLOUT, ou seja, quando o pool() reportou POOLOUT, ou seja, quando há espaço no buffer de saída
+*/
 void	Server::writeTo(int fd)
 {
-	// TODO issue #6: send do buffer de saida, limpar POLLOUT
-	// (void) para evitar warning
-	(void)fd;
+	std::map<int, Client*>::iterator	it;
+	Client								*client;
+	ssize_t								sent;
+
+	// Safe check: O fd pode ter sido agendado para remo;\ao nesta volta e já não ter Client
+	it = _clients.find(fd);
+	if (it == _clients.end())
+		return ;
+	client = it->second;
+
+	if (!client->hasPendingOutput())
+		return ;
+
+	sent = send(fd, client->getOutBuffer.c_str(), client->getOutBuffer.size(), MSG_NOSIGNAL);
+
+	// -1: Não deu para escrever agora. Bytes ficam na fila e tentamos na próxima volta.
+	if (sent == -1)
+		return ;
+
+	// Apagamos só o que realmente saiu
+	client->consumeOutBuffer(sent);
 }
 
 /*
