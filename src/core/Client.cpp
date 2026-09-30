@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:18:23 by davmendo          #+#    #+#             */
-/*   Updated: 2026/09/30 19:53:02 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/30 21:10:17 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,8 +44,6 @@ const std::string	&Client::getNickname() const
 {
 	return (_nickname);
 }
-
-
 
 // o TCP entrega bytes, nao comandos. Um recv() pode trazer
 // meio comando, um comando inteiro ou vários de uma vez. o Server guarda tudo
@@ -112,4 +110,32 @@ bool	Client::inputOverflow() const
 	if (pending > 0 && _in[_in.size() - 1] == '\r')
 		--pending;
 	return (pending > MAX_LINE - 2);
+}
+
+// Adiciona a msg à fila e coloca o terminador "\r\n"
+// send() só acontece no writeTo() do Server, depois do poll avisar POLLOUT
+void	Client::queue(const std::string &msg)
+{
+	_out += msg;
+	_out += "\r\n";
+}
+
+// O Server pergunta isto no fim de cada volta do loop para decidir se liga o POLLOUT neste fd.
+bool	Client::hasPendingOutput() const
+{
+	return (!_out.empty());
+}
+
+// Getter do _out para dar acesso ao server
+const std::string	&Client::getOutBuffer() const
+{
+	return (_out);
+}
+
+// O send() pode aceitar menos do que foi pedido
+// Retorno do send() decide quanto apagar
+// erase(0, n) remove n bytes a partir do início
+void	Client::consumeOutBuffer(size_t	n)
+{
+	_out.erase(0, n);
 }

@@ -6,7 +6,7 @@
 /*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 19:23:40 by davmendo          #+#    #+#             */
-/*   Updated: 2026/09/30 20:10:17 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/30 21:23:09 by leoaguia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ public:
 	int					getFd() const;
 	const std::string	&getHost() const;
 	const std::string	&getNickname() const;	// usado pelo Channel
-	const	std::string	&getOutBuffer() const;	// send() lê daqui
+	const std::string	&getOutBuffer() const;	// send() lê daqui
 
 	// Acrescenta msg + "\r\n" na fila de saída
 	void	queue(const std::string &msg);
@@ -52,7 +52,7 @@ public:
 	bool	hasPendingOutput() const;
 
 	// Apaga n bytes que o send aceitou
-	void	consumeOutBuffer(size_t	n);
+	void	consumeOutBuffer(size_t n);
 
 	// guarda os len bytes que o recv() devolveu, mesmo que sejam meio comando
 	void	appendToInBuffer(const char *data, size_t len);
