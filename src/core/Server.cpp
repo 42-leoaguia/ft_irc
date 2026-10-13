@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/13 18:09:46 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/10/14 00:10:51 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+volatile std::sig_atomic_t	Server::_stop = 0;
+
 /* Constructor */
 Server::Server(int port, const std::string& password)
 	: _serverFd(-1), _port(port), _password(password)
@@ -35,9 +37,12 @@ Server::Server(int port, const std::string& password)
 	setupSocket();
 }
 
-/* Destructor: fecha e apaga os clientes que ainda estiverem conectados */
+/* Destructor: apaga os canais, fecha e apaga os clientes que ainda estiverem
+conectados. Roda no Ctrl+C: run() sai do loop e o Server sai de escopo em main() */
 Server::~Server()
 {
+	// Canais primeiro: guardam Client*, mas nunca apagam clientes
+	_channels.clear();
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		close(it->first);
@@ -113,15 +118,18 @@ Events Loop: Server core
 - Ask if anyone has news
 - Deal with any news
 - Back to sleep mode
+Ctrl+C (SIGINT) ends the loop; ~Server() then closes and deletes everything.
 */
 void Server::run()
 {
-	while (true)
+	// Um SIGINT que chegue entre este teste e a entrada no poll() so e visto
+	// no proximo evento (ou no proximo Ctrl+C)
+	while (!_stop)
 	{
 		int	ready = poll(&_pfds[0], _pfds.size(), -1);
 
-		// TODO issue #7: O tratamento correto do -1 depende do handler de SIGINT
-		// Por enquanto voltamos ao início
+		// -1: um sinal interrompeu o poll() (o SIGINT faz isso) ou ele falhou.
+		// Sem olhar errno: volta ao while, que sai se foi o SIGINT
 		if (ready == -1)
 			continue;
 
@@ -162,6 +170,18 @@ void Server::run()
 		for (size_t i = 0; i < _toRemove.size(); ++i)
 			disconnect(_toRemove[i]);
 	}
+	std::cout << "Server shutting down" << std::endl;
+}
+
+/*
+handleSigint(): Handler de SIGINT. Num handler so e seguro escrever numa
+volatile sig_atomic_t: nada de cout, close ou delete aqui. Quem fecha e apaga
+tudo e o destrutor, quando main() termina.
+*/
+void	Server::handleSigint(int signum)
+{
+	(void)signum;
+	_stop = 1;
 }
 
 /*
@@ -295,21 +315,28 @@ void	Server::writeTo(int fd)
 }
 
 /*
-disconnect(): Fecha a conexao e apaga o Client (o Server e o dono).
-TODO issue #7: avisar os canais e mandar a mensagem de QUIT.
+disconnect(): Tira o cliente de tudo o que o Server guarda e so entao o apaga.
+So e chamado no fim da rodada do run(): no meio do laco, encurtar _pfds faria
+o indice pular um fd.
+TODO issue #16: antes de sair dos canais, mandar QUIT aos outros membros
+(precisa do queue() da issue #6).
 */
 void	Server::disconnect(int fd)
 {
 	std::map<int, Client*>::iterator	it;
+	Client								*client;
 
 	// O mesmo fd pode ter sido agendado duas vezes na mesma rodada
 	it = _clients.find(fd);
 	if (it == _clients.end())
 		return ;
-	delete it->second;
-	_clients.erase(it);
-	removePfd(fd);
+	client = it->second;
+	// Os canais guardam Client*: sem isto ficaria um ponteiro solto
+	removeFromChannels(client);
 	close(fd);
+	removePfd(fd);
+	_clients.erase(it);
+	delete client;
 	std::cout << "Client disconnected: " << fd << std::endl;
 }
 
@@ -350,5 +377,23 @@ void Server::parseCommand(Client& client, const std::string& line)
 	{
 		Join join;
 		join.execute(*this, client, params);
+	}
+}
+/*
+removeFromChannels(): Tira o cliente de todos os canais, como membro e como
+operador. Um canal que fica sem ninguem deixa de existir, como no IRC.
+*/
+void	Server::removeFromChannels(Client *client)
+{
+	std::map<std::string, Channel>::iterator	it = _channels.begin();
+
+	while (it != _channels.end())
+	{
+		it->second.removeMember(*client);
+		if (it->second.getMembers().empty())
+			// erase() nao devolve o seguinte, entao it++ avanca antes
+			_channels.erase(it++);
+		else
+			++it;
 	}
 }

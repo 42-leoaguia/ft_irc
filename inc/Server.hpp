@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/13 18:03:46 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/10/14 00:13:10 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #define SERVER_HPP
 
 #include <poll.h>
+#include <csignal>	// std::sig_atomic_t
 #include <map>		// std::map
 #include <string>	// std::string
 #include <vector>	// std::vector
@@ -34,7 +35,12 @@ class Server
 		// Liga cada fd ao seu Client. O Server é o dono desses objetos
 		std::map<int, Client*>		_clients;
 
-		std::map<std::string, Channel> _channels;
+		// Liga cada nome ao seu Channel. Também é o Server que apaga; quem cria é o JOIN (#18)
+		std::map<std::string, Channel>	_channels;
+
+		// Levantada pelo SIGINT (Ctrl+C): run() termina a rodada e sai do loop.
+		// static porque o handler de sinal não recebe o objeto
+		static volatile std::sig_atomic_t	_stop;
 
 		// Completei a OCF para evitar uma cópia do server
 		Server();
@@ -48,10 +54,12 @@ class Server
 		void	acceptClient();
 		void	readFrom(int fd);
 		void	writeTo(int fd);	// stub
-		void	disconnect(int fd);	// stub
+		void	disconnect(int fd);
 
 		// Auxiliar: Remove um fd do vetor _pfds
 		void	removePfd(int fd);
+		// Auxiliar: tira o cliente de todos os canais; canal vazio é apagado
+		void	removeFromChannels(Client *client);
 
 		// TODO issue 18-20 - função auxiliar de teste REMOVER NO FIM!
 		void parseCommand(Client& client, const std::string& line);
@@ -65,6 +73,9 @@ class Server
 		Channel& addChannel(const std::string& name);
 
 		void run();
+
+		// Handler de SIGINT, instalado em main(): só levanta _stop
+		static void	handleSigint(int signum);
 };
 
 #endif

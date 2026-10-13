@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: leoaguia <leoaguia@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:52:15 by leoaguia          #+#    #+#             */
-/*   Updated: 2026/09/03 00:49:37 by leoaguia         ###   ########.fr       */
+/*   Updated: 2026/09/23 14:56:13 by davmendo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <iostream>   // std::cerr, std::endl
 #include <string>     // std::string
 #include <stdexcept>  // std::invalid_argument, std::exception
+#include <csignal>    // std::signal, SIGINT, SIGPIPE
 
 #include "Server.hpp"
 
@@ -64,6 +65,17 @@ static int	validatePort(const std::string& port)
 	return (value);
 }
 
+// - Ctrl+C (SIGINT) não mata o processo: o handler só pede ao run() para sair,
+//   e o destrutor do Server fecha os fds.
+// - SIGPIPE: um send() para um cliente que já caiu mataria o processo.
+//   Ignorado, o send() só devolve -1 e o poll() reporta a queda.
+static void	setupSignals()
+{
+	if (std::signal(SIGINT, Server::handleSigint) == SIG_ERR
+		|| std::signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		throw std::runtime_error("signal() failed");
+}
+
 // Validação dos argumentos e ponto de entrada do servidor.
 int	main(int argc, char **argv)
 {
@@ -83,10 +95,13 @@ int	main(int argc, char **argv)
 
 		validatePass(pass);
 
-		// 3. Constrói o Server: socket, bind, listen. Lança se algum falhar.
+		// 3. Sinais, antes de abrir qualquer fd.
+		setupSignals();
+
+		// 4. Constrói o Server: socket, bind, listen. Lança se algum falhar.
 		Server	server(port, pass);
 
-		// 4. Entra no loop de poll(). Só retorna no SIGINT.
+		// 5. Entra no loop de poll(). Só retorna no SIGINT.
 		server.run();
 	}
 	catch (const std::exception& e)
