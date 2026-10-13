@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:18:23 by davmendo          #+#    #+#             */
-/*   Updated: 2026/09/17 14:49:57 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/10/13 18:07:05 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
+#include <iostream>
 
 
 const size_t	Client::MAX_LINE;
@@ -45,11 +46,19 @@ const std::string	&Client::getNickname() const
 	return (_nickname);
 }
 
+// vazio até o comando USER (issue #13) preencher _username.
+// o Channel usa para enviar mensagens de aviso
+const std::string	&Client::getUsername() const
+{
+	return (_username);
+}
+
 // provisorio: ainda nao existe buffer de saida (issue #6), então a mensagem é
 // ignorada. Quando a #6 criar o queue(), o Channel passa a chamar o queue()
 void	Client::sendMessage(const std::string &msg)
 {
-	(void)msg;
+	// (void)msg;
+	std::cout << msg << std::endl;
 }
 
 // o TCP entrega bytes, nao comandos. Um recv() pode trazer

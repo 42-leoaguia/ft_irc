@@ -26,14 +26,14 @@ public:
 	void setTopic(const std::string& topic);
 
 	// Members
-	void addMember(Client* client);
-	void removeMember(Client* client);
-	bool isMember(Client* client) const;
+	void addMember(Client& client);
+	void removeMember(Client& client);
+	bool isMember(Client& client) const;
 
 	// Operators
-	void addOperator(Client* client);
-	void removeOperator(Client* client);
-	bool isOperator(Client* client) const;
+	void addOperator(Client& client);
+	void removeOperator(Client& client);
+	bool isOperator(Client& client) const;
 
 	// Messaging
 	void broadcast(const std::string& msg, Client* except);

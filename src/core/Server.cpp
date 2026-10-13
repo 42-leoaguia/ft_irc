@@ -3,20 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/17 12:56:02 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/10/13 18:09:46 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "Client.hpp"
+#include "Channel.hpp"
+#include "Join.hpp"
 
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
 #include <new>			// std::bad_alloc
+#include <sstream>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -274,6 +277,9 @@ void	Server::readFrom(int fd)
 	{
 		// Nenhum comando apaga o Client aqui dentro: a remocao vai para _toRemove
 		std::cout << "Line from fd " << fd << ": [" << line << "]" << std::endl;
+
+		//TODO issue #18-20 Added for tests - To be removed
+		parseCommand(*client, line);
 	}
 	// Mais de 510 bytes sem "\n" nunca vira uma linha valida (RFC 2812):
 	// derruba o cliente para o buffer nao crescer sem limite
@@ -305,4 +311,44 @@ void	Server::disconnect(int fd)
 	removePfd(fd);
 	close(fd);
 	std::cout << "Client disconnected: " << fd << std::endl;
+}
+
+Channel *Server::getChannel(const std::string& name)
+{
+	if (_channels.find(name) != _channels.end())
+		return &_channels[name];
+	return NULL;
+}
+
+std::map<std::string, Channel>& Server::getChannels()
+{
+	return _channels;
+}
+
+Channel& Server::addChannel(const std::string& name)
+{
+	if (!this->getChannel(name))
+		_channels[name] = Channel(name);
+	return _channels[name];
+}
+
+// TODO issue #18-20 - auxiliary test function TO REMOVE IN THE END!
+void Server::parseCommand(Client& client, const std::string& line)
+{
+	std::stringstream ss(line);
+	
+	std::string command;
+	ss >> command;
+	
+	std::vector<std::string> params;
+	
+	std::string param;
+	while (ss >> param)
+	params.push_back(param);
+	
+	if (command == "JOIN")
+	{
+		Join join;
+		join.execute(*this, client, params);
+	}
 }
