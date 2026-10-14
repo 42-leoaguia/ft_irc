@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 18:18:23 by davmendo          #+#    #+#             */
-/*   Updated: 2026/10/13 18:07:05 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/10/14 11:55:03 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,7 @@ const std::string	&Client::getUsername() const
 void	Client::sendMessage(const std::string &msg)
 {
 	// (void)msg;
+	//TODO #issue 18-20 -> impressão de mensagem para efeitos de teste - REMOVER NO FIM!
 	std::cout << msg << std::endl;
 }
 
