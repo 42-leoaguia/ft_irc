@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/09/23 14:56:02 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/10/14 00:13:10 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ class Server
 		std::map<int, Client*>		_clients;
 
 		// Liga cada nome ao seu Channel. Também é o Server que apaga; quem cria é o JOIN (#18)
-		std::map<std::string, Channel*>	_channels;
+		std::map<std::string, Channel>	_channels;
 
 		// Levantada pelo SIGINT (Ctrl+C): run() termina a rodada e sai do loop.
 		// static porque o handler de sinal não recebe o objeto
@@ -61,9 +61,16 @@ class Server
 		// Auxiliar: tira o cliente de todos os canais; canal vazio é apagado
 		void	removeFromChannels(Client *client);
 
+		// TODO issue 18-20 - função auxiliar de teste REMOVER NO FIM!
+		void parseCommand(Client& client, const std::string& line);
+
 	public:
 		Server(int port, const std::string& password);
 		~Server();
+
+		Channel *getChannel (const std::string& name);
+		std::map<std::string, Channel>& getChannels();
+		Channel& addChannel(const std::string& name);
 
 		void run();
 

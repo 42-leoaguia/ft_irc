@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/01 19:23:40 by davmendo          #+#    #+#             */
-/*   Updated: 2026/09/17 14:49:15 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/10/13 18:10:13 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ public:
 	int					getFd() const;
 	const std::string	&getHost() const;
 	const std::string	&getNickname() const;   // usado pelo Channel
+	const std::string	&getUsername() const;   // usado pelo Channel
 
 
 	// TODO issue #6: vira queue(). por enquanto não envia nada
@@ -67,6 +68,8 @@ private:
 	std::string	_host;		// IP do cliente, ex.: "127.0.0.1"
 	std::string	_nickname;	// preenchido pelo NICK (issue #12)
 	std::string	_in;		// bytes que ainda não formaram uma linha completa
+	//issue #18 - added username field and empty getter function needed for the issue 18 tests.
+	std::string _username;
 };
 
 #endif
