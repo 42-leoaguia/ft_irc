@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: davmendo <davmendo@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/06 12:56:07 by davmendo         ###   ########.fr       */
+/*   Updated: 2026/10/14 00:10:51 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,13 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include "Message.hpp"
+#include "Join.hpp"
 
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
 #include <new>			// std::bad_alloc
+#include <sstream>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -41,8 +43,6 @@ conectados. Roda no Ctrl+C: run() sai do loop e o Server sai de escopo em main()
 Server::~Server()
 {
 	// Canais primeiro: guardam Client*, mas nunca apagam clientes
-	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
-		delete it->second;
 	_channels.clear();
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
@@ -321,6 +321,9 @@ void	Server::readFrom(int fd)
 		// mostra a linha e como o parser a separou
 		std::cout << "Line from fd " << fd << ": [" << line << "]" << std::endl;
 		logMessage(msg);
+
+		//TODO issue #18-20 Added for tests - To be removed
+		parseCommand(*client, line);
 	}
 	// Mais de 510 bytes sem "\n" nunca vira uma linha valida (RFC 2812):
 	// derruba o cliente para o buffer nao crescer sem limite
@@ -361,23 +364,59 @@ void	Server::disconnect(int fd)
 	std::cout << "Client disconnected: " << fd << std::endl;
 }
 
+Channel *Server::getChannel(const std::string& name)
+{
+	if (_channels.find(name) != _channels.end())
+		return &_channels[name];
+	return NULL;
+}
+
+std::map<std::string, Channel>& Server::getChannels()
+{
+	return _channels;
+}
+
+Channel& Server::addChannel(const std::string& name)
+{
+	if (!this->getChannel(name))
+		_channels[name] = Channel(name);
+	return _channels[name];
+}
+
+// TODO issue #18-20 - auxiliary test function TO REMOVE IN THE END!
+void Server::parseCommand(Client& client, const std::string& line)
+{
+	std::stringstream ss(line);
+	
+	std::string command;
+	ss >> command;
+	
+	std::vector<std::string> params;
+	
+	std::string param;
+	while (ss >> param)
+	params.push_back(param);
+	
+	if (command == "JOIN")
+	{
+		Join join;
+		join.execute(*this, client, params);
+	}
+}
 /*
 removeFromChannels(): Tira o cliente de todos os canais, como membro e como
 operador. Um canal que fica sem ninguem deixa de existir, como no IRC.
 */
 void	Server::removeFromChannels(Client *client)
 {
-	std::map<std::string, Channel*>::iterator	it = _channels.begin();
+	std::map<std::string, Channel>::iterator	it = _channels.begin();
 
 	while (it != _channels.end())
 	{
-		it->second->removeMember(client);
-		if (it->second->getMembers().empty())
-		{
-			delete it->second;
+		it->second.removeMember(*client);
+		if (it->second.getMembers().empty())
 			// erase() nao devolve o seguinte, entao it++ avanca antes
 			_channels.erase(it++);
-		}
 		else
 			++it;
 	}
