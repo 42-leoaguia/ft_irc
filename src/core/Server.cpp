@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/14 00:10:51 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/10/27 22:54:18 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include "Join.hpp"
+#include "Part.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -359,6 +360,11 @@ Channel& Server::addChannel(const std::string& name)
 	return _channels[name];
 }
 
+void Server::removeChannel(const std::string &name)
+{
+	_channels.erase(name);
+}
+
 // TODO issue #18-20 - auxiliary test function TO REMOVE IN THE END!
 void Server::parseCommand(Client& client, const std::string& line)
 {
@@ -377,6 +383,11 @@ void Server::parseCommand(Client& client, const std::string& line)
 	{
 		Join join;
 		join.execute(*this, client, params);
+	}
+	if (command == "PART")
+	{
+		Part part;
+		part.execute(*this, client, params);
 	}
 }
 /*

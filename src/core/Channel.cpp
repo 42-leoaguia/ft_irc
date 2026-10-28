@@ -31,6 +31,11 @@ void Channel::setTopic(const std::string& topic)
 	_topic = topic;
 }
 
+bool Channel::empty() const
+{
+	return _members.empty();
+}
+
 bool Channel::isMember(Client& client) const
 {
 	return std::find(
