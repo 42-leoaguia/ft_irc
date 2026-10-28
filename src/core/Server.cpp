@@ -13,6 +13,7 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "Message.hpp"
 #include "Join.hpp"
 
 #include <iostream>
@@ -252,6 +253,21 @@ void	Server::removePfd(int fd)
 }
 
 /*
+logMessage(): Provisorio ate o dispatch (#9). Mostra o que o parser separou:
+  prefix [nick!user@host] command [PRIVMSG] params [#geral] [ola pessoal]
+*/
+static void	logMessage(const Message &msg)
+{
+	const std::vector<std::string>	&params = msg.getParams();
+
+	std::cout << "  prefix [" << msg.getPrefix() << "] command ["
+		<< msg.getCommand() << "] params";
+	for (size_t i = 0; i < params.size(); ++i)
+		std::cout << " [" << params[i] << "]";
+	std::cout << std::endl;
+}
+
+/*
 readFrom(): Reads whatever arrived on a client fd.
 TCP entrega bytes, nao comandos: um recv() pode trazer meio comando, um
 comando inteiro ou varios. Os bytes vao para o buffer do cliente e so saem
@@ -295,8 +311,16 @@ void	Server::readFrom(int fd)
 	// O que sobrar (comando pela metade) fica no buffer esperando o proximo recv()
 	while (client->extractLine(line))
 	{
+		Message	msg(line);
+
+		// Linha vazia ou so com espacos nao tem comando: descartada sem resposta
+		if (msg.isEmpty())
+			continue ;
 		// Nenhum comando apaga o Client aqui dentro: a remocao vai para _toRemove
+		// TODO issue #9: entregar msg ao handler do comando. Ate la, o log
+		// mostra a linha e como o parser a separou
 		std::cout << "Line from fd " << fd << ": [" << line << "]" << std::endl;
+		logMessage(msg);
 
 		//TODO issue #18-20 Added for tests - To be removed
 		parseCommand(*client, line);
