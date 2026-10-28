@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:43 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/14 00:13:10 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/10/27 22:29:42 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,7 @@ class Server
 		Channel *getChannel (const std::string& name);
 		std::map<std::string, Channel>& getChannels();
 		Channel& addChannel(const std::string& name);
+		void removeChannel(const std::string &name);
 
 		void run();
 
