@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/27 22:54:18 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/10/28 12:46:13 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "Channel.hpp"
 #include "Message.hpp"
 #include "Join.hpp"
+#include "Topic.hpp"
 #include "Part.hpp"
 
 #include <iostream>
@@ -408,6 +409,11 @@ void Server::parseCommand(Client& client, const std::string& line)
 		Join join;
 		join.execute(*this, client, params);
 	}
+	if (command == "TOPIC")
+	{
+		Topic topic;
+		topic.execute(*this, client, params);
+  }
 	if (command == "PART")
 	{
 		Part part;
