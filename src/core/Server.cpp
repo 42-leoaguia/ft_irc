@@ -14,6 +14,8 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include "Message.hpp"
+#include "Replies.hpp"
+#include "Command.hpp"
 #include "Join.hpp"
 #include "Topic.hpp"
 #include "Part.hpp"
@@ -22,7 +24,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <new>			// std::bad_alloc
-#include <sstream>
+#include <utility>		// std::make_pair
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -37,7 +39,19 @@ volatile std::sig_atomic_t	Server::_stop = 0;
 Server::Server(int port, const std::string& password)
 	: _serverFd(-1), _port(port), _password(password)
 {
-	setupSocket();
+	// Se o construtor lanca, o destrutor nao roda: desfaz aqui o que ja foi feito
+	try
+	{
+		initCommands();
+		setupSocket();
+	}
+	catch (...)
+	{
+		deleteCommands();
+		if (_serverFd != -1)
+			close(_serverFd);
+		throw ;
+	}
 }
 
 /* Destructor: apaga os canais, fecha e apaga os clientes que ainda estiverem
@@ -52,8 +66,55 @@ Server::~Server()
 		delete it->second;
 	}
 	_clients.clear();
+	deleteCommands();
 	if (_serverFd != -1)
 		close(_serverFd);
+}
+
+/*
+initCommands(): O UNICO lugar que conhece nomes de comando. Comando novo =
+arquivo novo + uma linha aqui (e o #include do header dele no topo).
+O terceiro argumento diz se o comando exige registro completo: so PASS, NICK,
+USER, QUIT e PING passam com false, o resto recebe 451 antes do registro.
+*/
+void	Server::initCommands()
+{
+	addCommand("JOIN", new Join(), true);
+	addCommand("PART", new Part(), true);
+	addCommand("TOPIC", new Topic(), true);
+}
+
+/*
+addCommand(): So chamado por initCommands(). Recebe o nome como const char*
+para nada alocar entre o new do handler e esta chamada: se a insercao falha,
+o handler e apagado aqui e nada vaza.
+*/
+void	Server::addCommand(const char *name, Command *cmd, bool needsRegistration)
+{
+	CommandHandler	handler;
+
+	handler.cmd = cmd;
+	handler.needsRegistration = needsRegistration;
+	try
+	{
+		// insert() nao substitui: nome repetido e erro de quem registrou
+		if (!_commands.insert(std::make_pair(std::string(name), handler)).second)
+			throw std::logic_error(std::string("command registered twice: ") + name);
+	}
+	catch (...)
+	{
+		delete cmd;
+		throw ;
+	}
+}
+
+void	Server::deleteCommands()
+{
+	std::map<std::string, CommandHandler>::iterator	it;
+
+	for (it = _commands.begin(); it != _commands.end(); ++it)
+		delete it->second.cmd;
+	_commands.clear();
 }
 
 void Server::setupSocket()
@@ -255,18 +316,41 @@ void	Server::removePfd(int fd)
 }
 
 /*
-logMessage(): Provisorio ate o dispatch (#9). Mostra o que o parser separou:
-  prefix [nick!user@host] command [PRIVMSG] params [#geral] [ola pessoal]
+replyTarget(): Quem recebe uma resposta numerica: o nick, ou "*" enquanto o
+cliente ainda nao tem um (RFC 2812)
 */
-static void	logMessage(const Message &msg)
+static std::string	replyTarget(const Client &client)
 {
-	const std::vector<std::string>	&params = msg.getParams();
+	if (client.getNickname().empty())
+		return ("*");
+	return (client.getNickname());
+}
 
-	std::cout << "  prefix [" << msg.getPrefix() << "] command ["
-		<< msg.getCommand() << "] params";
-	for (size_t i = 0; i < params.size(); ++i)
-		std::cout << " [" << params[i] << "]";
-	std::cout << std::endl;
+/*
+dispatch(): Procura o comando na tabela e chama o handler dele. O Server nao
+conhece nome de comando nenhum aqui: tudo vem de initCommands().
+  comando que nao esta na tabela                 -> 421 ERR_UNKNOWNCOMMAND
+  exige registro e o cliente nao esta registrado -> 451 ERR_NOTREGISTERED
+*/
+void	Server::dispatch(Client &client, const Message &msg)
+{
+	std::map<std::string, CommandHandler>::const_iterator	it;
+
+	it = _commands.find(msg.getCommand());
+	if (it == _commands.end())
+	{
+		client.sendMessage(std::string(":ircserv ") + ERR_UNKNOWNCOMMAND + " "
+			+ replyTarget(client) + " " + msg.getCommand() + " :"
+			+ ERR_UNKNOWNCOMMAND_TEXT);
+		return ;
+	}
+	if (it->second.needsRegistration && !client.isRegistered())
+	{
+		client.sendMessage(std::string(":ircserv ") + ERR_NOTREGISTERED + " "
+			+ replyTarget(client) + " :" + ERR_NOTREGISTERED_TEXT);
+		return ;
+	}
+	it->second.cmd->execute(*this, client, msg.getParams());
 }
 
 /*
@@ -318,14 +402,23 @@ void	Server::readFrom(int fd)
 		// Linha vazia ou so com espacos nao tem comando: descartada sem resposta
 		if (msg.isEmpty())
 			continue ;
-		// Nenhum comando apaga o Client aqui dentro: a remocao vai para _toRemove
-		// TODO issue #9: entregar msg ao handler do comando. Ate la, o log
-		// mostra a linha e como o parser a separou
 		std::cout << "Line from fd " << fd << ": [" << line << "]" << std::endl;
-		logMessage(msg);
-
-		//TODO issue #18-20 Added for tests - To be removed
-		parseCommand(*client, line);
+		// Nenhum comando apaga o Client aqui dentro: a remocao vai para _toRemove.
+		// Um bug num comando nao pode terminar o processo (nota 0): o erro fica
+		// so com este cliente. O comando pode ter parado no meio e deixado o
+		// estado dele pela metade, entao ele cai no fim da rodada e o resto do
+		// que mandou e descartado. Os outros clientes seguem normalmente
+		try
+		{
+			dispatch(*client, msg);
+		}
+		catch (const std::exception &e)
+		{
+			std::cerr << "Error: command " << msg.getCommand() << " from fd "
+				<< fd << " failed: " << e.what() << std::endl;
+			_toRemove.push_back(fd);
+			return ;
+		}
 	}
 	// Mais de 510 bytes sem "\n" nunca vira uma linha valida (RFC 2812):
 	// derruba o cliente para o buffer nao crescer sem limite
@@ -390,36 +483,6 @@ void Server::removeChannel(const std::string &name)
 	_channels.erase(name);
 }
 
-// TODO issue #18-20 - auxiliary test function TO REMOVE IN THE END!
-void Server::parseCommand(Client& client, const std::string& line)
-{
-	std::stringstream ss(line);
-	
-	std::string command;
-	ss >> command;
-	
-	std::vector<std::string> params;
-	
-	std::string param;
-	while (ss >> param)
-	params.push_back(param);
-	
-	if (command == "JOIN")
-	{
-		Join join;
-		join.execute(*this, client, params);
-	}
-	if (command == "TOPIC")
-	{
-		Topic topic;
-		topic.execute(*this, client, params);
-  }
-	if (command == "PART")
-	{
-		Part part;
-		part.execute(*this, client, params);
-	}
-}
 /*
 removeFromChannels(): Tira o cliente de todos os canais, como membro e como
 operador. Um canal que fica sem ninguem deixa de existir, como no IRC.

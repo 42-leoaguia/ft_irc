@@ -16,8 +16,9 @@
 
 const size_t	Client::MAX_LINE;
 
-// começa com o buffer de entrada vazio e sem nickname
-Client::Client(int fd, const std::string &host): _fd(fd), _host(host), _in()
+// começa com o buffer de entrada vazio, sem nickname e sem registro
+Client::Client(int fd, const std::string &host)
+	: _fd(fd), _host(host), _in(), _registered(false)
 {
 }
 
@@ -51,6 +52,12 @@ const std::string	&Client::getNickname() const
 const std::string	&Client::getUsername() const
 {
 	return (_username);
+}
+
+// o dispatch do Server consulta isto antes de cada comando que exige registro
+bool	Client::isRegistered() const
+{
+	return (_registered);
 }
 
 // provisorio: ainda nao existe buffer de saida (issue #6), então a mensagem é

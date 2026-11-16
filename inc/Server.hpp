@@ -21,10 +21,19 @@
 
 class Client;
 class Channel;
+class Command;
+class Message;
 
 class Server
 {
 	private:
+		// Uma entrada da tabela de comandos
+		struct CommandHandler
+		{
+			Command	*cmd;				// o Server e o dono: apagado no destrutor
+			bool	needsRegistration;	// false so para PASS, NICK, USER, QUIT e PING
+		};
+
 		// Regra: _pfds[0] = socket de escuta. O resto são clientes
 		std::vector<struct pollfd>	_pfds;
 		int							_serverFd;
@@ -37,6 +46,9 @@ class Server
 
 		// Liga cada nome ao seu Channel. Também é o Server que apaga; quem cria é o JOIN (#18)
 		std::map<std::string, Channel>	_channels;
+
+		// Nome do comando (em maiusculas) -> handler. Preenchida so em initCommands()
+		std::map<std::string, CommandHandler>	_commands;
 
 		// Levantada pelo SIGINT (Ctrl+C): run() termina a rodada e sai do loop.
 		// static porque o handler de sinal não recebe o objeto
@@ -61,8 +73,12 @@ class Server
 		// Auxiliar: tira o cliente de todos os canais; canal vazio é apagado
 		void	removeFromChannels(Client *client);
 
-		// TODO issue 18-20 - função auxiliar de teste REMOVER NO FIM!
-		void parseCommand(Client& client, const std::string& line);
+		// Tabela de comandos: comando novo = arquivo novo + uma linha em initCommands()
+		void	initCommands();
+		void	addCommand(const char *name, Command *cmd, bool needsRegistration);
+		void	deleteCommands();
+		// Entrega uma mensagem ao handler do comando, ou responde 421/451
+		void	dispatch(Client &client, const Message &msg);
 
 	public:
 		Server(int port, const std::string& password);
