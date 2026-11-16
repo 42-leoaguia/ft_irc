@@ -45,6 +45,9 @@ public:
 	const std::string	&getNickname() const;   // usado pelo Channel
 	const std::string	&getUsername() const;   // usado pelo Channel
 
+	// false ate o registro terminar (welcome, issue #14). antes disso o
+	// dispatch so aceita PASS, NICK, USER, QUIT e PING: o resto recebe 451
+	bool				isRegistered() const;
 
 	// TODO issue #6: vira queue(). por enquanto não envia nada
 	void	sendMessage(const std::string &msg);
@@ -70,6 +73,7 @@ private:
 	std::string	_in;		// bytes que ainda não formaram uma linha completa
 	//issue #18 - added username field and empty getter function needed for the issue 18 tests.
 	std::string _username;
+	bool		_registered;	// vira true no welcome (issue #14)
 };
 
 #endif
