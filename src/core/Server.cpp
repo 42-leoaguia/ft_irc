@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/02 16:19:52 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/28 12:46:13 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/11/26 15:48:25 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include "Join.hpp"
 #include "Topic.hpp"
 #include "Part.hpp"
+#include "Mode.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -82,6 +83,7 @@ void	Server::initCommands()
 	addCommand("JOIN", new Join(), true);
 	addCommand("PART", new Part(), true);
 	addCommand("TOPIC", new Topic(), true);
+	addCommand("MODE", new Mode(), true);
 }
 
 /*

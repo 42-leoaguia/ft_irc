@@ -6,7 +6,7 @@
 /*   By: liafonse <liafonse@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/28 12:40:45 by liafonse          #+#    #+#             */
-/*   Updated: 2026/10/28 12:48:03 by liafonse         ###   ########.fr       */
+/*   Updated: 2026/11/26 22:00:20 by liafonse         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,8 +105,25 @@ void Topic::execute(Server &server,
 	*/
 	std::string newTopic = params[1];
 
-	channel->setTopic(newTopic);
+	if (channel->isTopicRestricted() && !channel->isOperator(client)){
+		client.sendMessage(
+			std::string(":ircserv ")
+			+ ERR_CHANOPRIVSNEEDED
+			+ " "
+			+ client.getNickname()
+			+ " "
+			+ channelName
+			+ " :"
+			+ ERR_CHANOPRIVSNEEDED_TEXT
+			+ "\r\n");
+		return;
+	}
 
+	channel->setTopic(newTopic);
+	notifyTopic(*channel, client);
+}
+
+void notifyTopic(Channel& channel, Client& client){
 	std::string msg =
 		":" + client.getNickname()
 		+ "!"
@@ -114,10 +131,10 @@ void Topic::execute(Server &server,
 		+ "@"
 		+ client.getHost()
 		+ " TOPIC "
-		+ channelName
+		+ channel.getName()
 		+ " :"
-		+ newTopic
+		+ channel.getTopic()
 		+ "\r\n";
 
-	channel->broadcast(msg, NULL);
+	channel.broadcast(msg, NULL);
 }

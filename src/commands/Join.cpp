@@ -5,6 +5,7 @@
 #include "Replies.hpp"
 #include <sstream>
 #include <iostream>
+#include <cstdio>
 
 Join::Join()
 {
@@ -72,65 +73,99 @@ void Join::execute(Server &server,
 			continue;
 		}
 
-		if (!server.getChannel(channelName)){
-			server.addChannel(channelName).addOperator(client);
-		}
-
 		Channel *channel = server.getChannel(channelName);
 
-		if (channel->isMember(client))
+		if (!channel)
+		{
+			channel = createChannel(server, client, channelName);
+		} else if (channel->isMember(client))
 			continue;
+
+		if (channel->isInviteOnly()){
+			client.sendMessage(
+				std::string(":ircserv ")
+				+ ERR_INVITEONLYCHAN + " "
+				+ client.getNickname() + " "
+				+ channelName + " :"
+				+ ERR_INVITEONLYCHAN_TEXT
+				+ "\r\n");
+
+			continue;
+		}
 
 		channel->addMember(client);
 
-		std::string joinMsg =
+		notifyJoin(*channel, client);
+
+		sendChannelInfo(*channel, client);
+	}
+};
+
+Channel* createChannel(Server& server, Client& client, std::string channelName) {
+	server.addChannel(channelName);
+	Channel *channel = server.getChannel(channelName);
+	channel->addMember(client);
+	channel->addOperator(client);
+	return channel;
+}
+
+void notifyJoin(Channel& channel, Client& client){
+	std::string joinMsg =
 			":" + client.getNickname() +
 			"!" + client.getUsername() +
 			"@" + client.getHost() + 
 			" JOIN " +
-			channelName + "\r\n";
+			channel.getName() + "\r\n";
 
-		channel->broadcast(joinMsg, NULL);
+	channel.broadcast(joinMsg, NULL);
+}
 
-		if (channel->getTopic().empty())
-		{
-			client.sendMessage(
-				std::string(":ircserv ") +
-				RPL_NOTOPIC + " " +
-				client.getNickname() + " " +
-				channelName + " :" +
-				RPL_NOTOPIC_TEXT +
-				"\r\n");
-		}
-		else
-		{
-			client.sendMessage(
-				std::string(":ircserv ") +
-				RPL_TOPIC + " " +
-				client.getNickname() + " " +
-				channelName + " :" +
-				channel->getTopic() +
-				"\r\n");
-		}
+void sendChannelInfo(Channel& channel, Client& client){
+		sendTopic(channel, client);
+		sendMembersList(channel, client);
+}
 
+void sendTopic(Channel& channel, Client& client){
+	if (channel.getTopic().empty())
+	{
 		client.sendMessage(
+			std::string(":ircserv ") +
+			RPL_NOTOPIC + " " +
+			client.getNickname() + " " +
+			channel.getName() + " :" +
+			RPL_NOTOPIC_TEXT +
+			"\r\n");
+	}
+	else
+	{
+		client.sendMessage(
+			std::string(":ircserv ") +
+			RPL_TOPIC + " " +
+			client.getNickname() + " " +
+			channel.getName() + " :" +
+			channel.getTopic() +
+			"\r\n");
+	}
+}
+
+void sendMembersList(Channel& channel, Client& client){
+	client.sendMessage(
 			std::string(":ircserv ") +
 			RPL_NAMREPLY + " " +
 			client.getNickname() +
 			" " +
-			channelName +
+			channel.getName() +
 			" :" +
-			channel->getNamesList() +
+			channel.getNamesList() +
 			"\r\n");
 
-		client.sendMessage(
+	client.sendMessage(
 			std::string(":ircserv ") +
 			RPL_ENDOFNAMES + " " +
 			client.getNickname() +
 			" " +
-			channelName +
+			channel.getName() +
 			" :" +
 			RPL_ENDOFNAMES_TEXT +
 			"\r\n");
-	}
 }

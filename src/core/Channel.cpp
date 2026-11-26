@@ -4,11 +4,16 @@
 #include <algorithm>
 
 Channel::Channel()
+	: _name("Default"),
+	  _inviteOnly(false),
+	  _topicRestricted(false)
 {
 }
 
 Channel::Channel(const std::string& name)
-	: _name(name)
+	: _name(name),
+	  _inviteOnly(false),
+	  _topicRestricted(false)
 {
 }
 
@@ -29,6 +34,37 @@ const std::string& Channel::getTopic() const
 void Channel::setTopic(const std::string& topic)
 {
 	_topic = topic;
+}
+
+bool Channel::isInviteOnly() const{
+	return _inviteOnly;
+}
+
+void Channel::setInviteOnly(bool mode){
+	_inviteOnly = mode;
+}
+
+bool Channel::isTopicRestricted() const{
+	return _topicRestricted;
+}
+
+void Channel::setTopicRestricted(bool mode){
+	_topicRestricted = mode;
+}
+
+std::string Channel::getModeString() const
+{
+	std::string modes = "+";
+
+	if (_inviteOnly)
+		modes += "i";
+
+	if (_topicRestricted)
+		modes += "t";
+
+	if (modes.length() == 1) return "";
+
+	return modes;
 }
 
 bool Channel::empty() const
@@ -98,14 +134,14 @@ void Channel::removeOperator(Client& client)
 void Channel::broadcast(const std::string& msg, Client* except)
 {
 	for (std::vector<Client*>::iterator it = _members.begin();
-         it != _members.end();
-         ++it)
-    {
-        if (*it == except)
-            continue;
+		 it != _members.end();
+		 ++it)
+	{
+		if (*it == except)
+			continue;
 
-        (*it)->sendMessage(msg);
-    }
+		(*it)->sendMessage(msg);
+	}
 }
 
 std::string Channel::getNamesList() const

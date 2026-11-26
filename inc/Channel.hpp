@@ -15,6 +15,9 @@ private:
 	std::vector<Client*> _members;
 	std::vector<Client*> _operators;
 
+	bool _inviteOnly;
+	bool _topicRestricted;
+
 public:
 	Channel();
 	Channel(const std::string& name);
@@ -24,12 +27,19 @@ public:
 	const std::string& getName() const;
 	const std::string& getTopic() const;
 	void setTopic(const std::string& topic);
-	bool empty() const;
 
+	// Channel modes
+	bool isInviteOnly() const;
+	void setInviteOnly(bool mode);
+	bool isTopicRestricted() const;
+	void setTopicRestricted(bool mode);
+	std::string getModeString() const;
+	
 	// Members
 	void addMember(Client& client);
 	void removeMember(Client& client);
 	bool isMember(Client& client) const;
+	bool empty() const;
 
 	// Operators
 	void addOperator(Client& client);
